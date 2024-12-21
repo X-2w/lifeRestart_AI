@@ -1,7 +1,8 @@
 const path = require('path');
+const { hot } = require('webpack-dev-server/bin/cli-flags');
 
 module.exports = {
-  mode: 'production',
+  mode: 'development',
   entry: './src/index.js',
   devtool: 'eval-cheap-module-source-map',
   devServer: {
@@ -27,6 +28,7 @@ module.exports = {
         publicPath: '/lib',
       },
     ],
+    hot: true,//热模块替换
   },
   output: {
     path: path.resolve(__dirname, 'public'),
