@@ -16,6 +16,25 @@ class Property {
         EVT: "EVT", // 事件 event EVT
         TMS: "TMS", // 次数 times TMS
 
+        // 上局
+        LSAGE: "LSAGE", // 年龄 age AGE
+        LSCHR: "LSCHR", // 颜值 charm CHR
+        LSINT: "LSINT", // 智力 intelligence INT
+        LSSTR: "LSSTR", // 体质 strength STR
+        LSMNY: "LSMNY", // 家境 money MNY
+        LSSPR: "LSSPR", // 快乐 spirit SPR
+
+        // 变数
+        CHAGE: "CHAGE", // 年龄 age AGE
+        CHCHR: "CHCHR", // 颜值 charm CHR
+        CHINT: "CHINT", // 智力 intelligence INT
+        CHSTR: "CHSTR", // 体质 strength STR
+        CHMNY: "CHMNY", // 家境 money MNY
+        CHSPR: "CHSPR", // 快乐 spirit SPR
+
+        // 选项
+        SEL: "SEL", // 选项 selection SEL
+
         // Auto calc
         LAGE: "LAGE", // 最低年龄 Low Age
         HAGE: "HAGE", // 最高年龄 High Age
@@ -82,6 +101,20 @@ class Property {
             [this.TYPES.MNY]: 0,
             [this.TYPES.SPR]: 0,
 
+            // 重置与初始化
+            [this.TYPES.CHCHR]: 0,
+            [this.TYPES.CHINT]: 0,
+            [this.TYPES.CHSTR]: 0,
+            [this.TYPES.CHMNY]: 0,
+            [this.TYPES.CHSPR]: 0,
+            [this.TYPES.LSCHR]: 0,
+            [this.TYPES.LSINT]: 0,
+            [this.TYPES.LSSTR]: 0,
+            [this.TYPES.LSMNY]: 0,
+            [this.TYPES.LSSPR]: 0,
+
+            [this.TYPES.SEL]: {},
+
             [this.TYPES.LIF]: 1,
 
             [this.TYPES.TLT]: [],
@@ -128,6 +161,21 @@ class Property {
             case this.TYPES.STR:
             case this.TYPES.MNY:
             case this.TYPES.SPR:
+            // LS
+            case this.TYPES.LSCHR:
+            case this.TYPES.LSINT:
+            case this.TYPES.LSSTR:
+            case this.TYPES.LSMNY:
+            case this.TYPES.LSSPR:
+            // CH
+            case this.TYPES.CHCHR:
+            case this.TYPES.CHINT:
+            case this.TYPES.CHSTR:
+            case this.TYPES.CHMNY:
+            case this.TYPES.CHSPR:
+            // 选项
+            case this.TYPES.SEL:
+
             case this.TYPES.LIF:
             case this.TYPES.TLT:
             case this.TYPES.EVT:
@@ -231,6 +279,22 @@ class Property {
             [this.TYPES.STR]: this.get(this.TYPES.STR),
             [this.TYPES.MNY]: this.get(this.TYPES.MNY),
             [this.TYPES.SPR]: this.get(this.TYPES.SPR),
+            // 上次
+            [this.TYPES.LSAGE]: this.get(this.TYPES.LSAGE),
+            [this.TYPES.LSCHR]: this.get(this.TYPES.LSCHR),
+            [this.TYPES.LSINT]: this.get(this.TYPES.LSINT),
+            [this.TYPES.LSSTR]: this.get(this.TYPES.LSSTR),
+            [this.TYPES.LSMNY]: this.get(this.TYPES.LSMNY),
+            [this.TYPES.LSSPR]: this.get(this.TYPES.LSSPR),
+            // 改变
+            [this.TYPES.CHAGE]: this.get(this.TYPES.CHAGE),
+            [this.TYPES.CHCHR]: this.get(this.TYPES.CHCHR),
+            [this.TYPES.CHINT]: this.get(this.TYPES.CHINT),
+            [this.TYPES.CHSTR]: this.get(this.TYPES.CHSTR),
+            [this.TYPES.CHMNY]: this.get(this.TYPES.CHMNY),
+            [this.TYPES.CHSPR]: this.get(this.TYPES.CHSPR),
+            // 选项
+            [this.TYPES.SEL]: this.get(this.TYPES.SEL)
         });
     }
 
@@ -273,6 +337,24 @@ class Property {
     effect(effects) {
         for(const prop in effects)
             this.change(prop, Number(effects[prop]));
+    }
+
+    // 更新AI属性点和选项
+    upDataAI(effects){
+        for(const prop in effects) {
+            this.#data[this.TYPES[`LS${prop}`]] = this.#data[prop];
+            this.#data[this.TYPES[`CH${prop}`]] = Number(effects[prop]);
+            this.hl(prop, this.#data[prop] += Number(effects[prop]));
+            console.log(
+                `更新参数LS${prop}`,this.#data[this.TYPES[`LS${prop}`]],
+                `更新参数CH${prop}`,this.#data[this.TYPES[`CH${prop}`]]
+            )
+        }
+    }
+
+    updataselection(selections){
+    this.#data[this.TYPES.SEL] = selections
+    console.log("上传property选项",this.#data[this.TYPES.SEL])
     }
 
     isEnd() {

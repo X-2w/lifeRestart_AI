@@ -2,6 +2,7 @@ import { summary } from './functions/summary.js';
 import { getRate, getGrade } from './functions/addition.js';
 import Life from './life.js';
 
+
 class App{
     constructor(){
         this.#life = new Life();
@@ -344,9 +345,19 @@ class App{
         // Trajectory
         const trajectoryPage = $(`
         <div id="main">
-            <ul id="lifeProperty" class="lifeProperty"></ul>
+            <ul id="lifeProperty" class="lifeProperty">
+                <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
+            </ul>
             <ul id="lifeTrajectory" class="lifeTrajectory"></ul>
-            <div class="options" style="position: fixed; bottom: 0px; height: 20vh; width: 100%;"></div>
+            <div id="selection" class="lifeTrajectory" style="flex:0.2;overflow:unset;">
+                <li id="option1">信息1</li>
+                <li id="option2">信息2</li>
+                <li id="option3">信息3</li>
+                <li>
+                <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
+                <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
+                </li>
+                </div>
             <div class="btn-area">
                 <button id="summary" class="mainbtn">人生总结</button>
                 <button id="domToImage" class="mainbtn">人生回放</button>
@@ -363,7 +374,6 @@ class App{
                 if(this.#isEnd) return;
                 const trajectory = this.#life.next();
                 const { age, content, isEnd } = trajectory;
-                // 事件更新
                 const li = $(`<li><span>${age}岁：</span><span>${
                     content.map(
                         ({type, description, grade, name, postEvent}) => {
@@ -387,15 +397,51 @@ class App{
                     // 如未死亡，更新数值
                     // Update properties if not die yet
                     const property = this.#life.getLastRecord();
+                    const tokens = this.#life.tokens;
                     $("#lifeProperty").html(`
-                    <li><span>颜值</span><span>${property.CHR}</span></li>
-                    <li><span>智力</span><span>${property.INT}</span></li>
-                    <li><span>体质</span><span>${property.STR}</span></li>
-                    <li><span>家境</span><span>${property.MNY}</span></li>
-                    <li><span>快乐</span><span>${property.SPR}</span></li>
-                    `);
+                        <li ><span>调用</span><span>${tokens}</span></li>
+                        <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
+                        <li><span>颜值</span><span>${property.CHR}</span></li>
+                        <li><span>智力</span><span>${property.INT}</span></li>
+                        <li><span>体质</span><span>${property.STR}</span></li>
+                        <li><span>家境</span><span>${property.MNY}</span></li>
+                        <li><span>快乐</span><span>${property.SPR}</span></li>
+                        `);
+
                 }
             });
+            
+        // AI窗口点击事件
+        trajectoryPage.mounted = () => {
+            trajectoryPage
+                .find('#selection')
+                .click(()=>{
+                    // this.#life.select(0);
+                    // console.log('normal')
+                });
+            trajectoryPage
+                .find('#option1')
+                .click(()=>{
+                    this.#life.select(1);
+                    console.log('s1')
+                });
+            trajectoryPage
+                .find('#option2')
+                .click(()=>{
+                    this.#life.select(2);
+                    console.log('s2')
+                });
+            trajectoryPage
+                .find('#option3')
+                .click(()=>{
+                    this.#life.select(3);
+                    console.log('s3')
+                });
+        };
+
+
+
+
         // html2canvas
         trajectoryPage
             .find('#domToImage')

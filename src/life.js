@@ -30,6 +30,204 @@ class Life {
         this.#achievement.initial({achievements});
     }
 
+    checkSelections(id,description) {
+        const event = this.#event.get(id);
+        if (!event.selections) {
+            clearTimeout(this.apiCallTimeout);
+            this.apiCallTimeout = setTimeout(() => {
+                this.wenXinAPI(id,description);
+            }, 10000);
+        }else{
+
+        }
+    }
+
+    // 调用记录
+    tokens = this.getStoredTokens();
+
+    getStoredTokens() {
+        const storedTokens = localStorage.getItem('tokens');
+        const lastReset = localStorage.getItem('lastReset');
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+
+        if (lastReset !== today) {
+            localStorage.setItem('lastReset', today);
+            localStorage.setItem('tokens', 0);
+            return 0;
+        }
+
+        return storedTokens ? parseInt(storedTokens, 10) : 0;
+    }
+
+    set tokens(value) {
+        localStorage.setItem('tokens', value);
+    }
+    
+    // ai获取选项
+    async wenXinAPI(eventId,inputText) {
+        const appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
+        const secretKey = 'APdrEVtV6CQBjg9awvpTMSQUM9sN9j6K';
+        const openId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI'; // Unique user ID
+        const token ="24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
+        const age = this.getLastRecord().age
+        
+        const requestBody = {
+            message: {
+                content: {
+                    type: "text",
+                    value: {
+                        showText: age + inputText
+                    }
+                },
+                source: appId,
+                from: "openapi",
+                openId: openId
+            }
+        };
+
+            try {
+                const response = await fetch('https://agentapi.baidu.com/assistant/getAnswer?appId=' + appId + '&secretKey='+ secretKey, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+    
+                const parsedData = await response.json();
+
+                console.log('接收到数据转换为json',parsedData);
+                
+                const nestedJsonString = parsedData.data.content[0].data;
+                
+                // 移除 Markdown 标记并提取 JSON 字符串
+                let cleanedJsonString = nestedJsonString.replace(/^\`\`\`json([\s\S]*?)\`\`\`$/, '$1');
+                // 移除数据中的+
+                cleanedJsonString = cleanedJsonString.replace(/\+(\d+)/g, '$1'); // 将 +10 替换为 10
+                // // 解析嵌套的JSON字符串
+                const nestedJsonObject = JSON.parse(cleanedJsonString);
+
+                console.log('解析嵌套json',nestedJsonObject);
+                // 上传选项
+                this.tokens++;   
+                
+                // 获取到的api数据添加到事件与添加到proper
+                this.#event.addSelections(eventId,nestedJsonObject);
+                this.#property.updataselection(nestedJsonObject)
+                
+                this.select(0);
+
+
+            } catch (error) {
+                console.error(error)
+            }
+    }
+
+    select(option){
+        const selections = this.getLastRecord().SEL;
+        console.log('选择',selections);
+        let formattedData;
+        if (option === 0) {
+            const id = "option0"
+            formattedData = {
+                CHR: selections.normal.CHR,
+                INT: selections.normal.INT,
+                STR: selections.normal.STR,
+                MNY: selections.normal.MNY,
+                SPR: selections.normal.SPR,
+            };
+        } else if (option === 1) {
+            const id = "option1"
+            formattedData = {
+                CHR: selections.option1.CHR,
+                INT: selections.option1.INT,
+                STR: selections.option1.STR,
+                MNY: selections.option1.MNY,
+                SPR: selections.option1.SPR,
+            };
+        } else if (option === 2) {
+            const id = "option2"
+            formattedData = {
+                CHR: selections.option2.CHR,
+                INT: selections.option2.INT,
+                STR: selections.option2.STR,
+                MNY: selections.option2.MNY,
+                SPR: selections.option2.SPR,
+            };
+        } else if (option === 3) {
+            const id = "option3";
+            formattedData = {
+                CHR: selections.option3.CHR,
+                INT: selections.option3.INT,
+                STR: selections.option3.STR,
+                MNY: selections.option3.MNY,
+                SPR: selections.option3.SPR,
+            };
+        };  
+        // 添加到页面
+        if (option >= 1 && option <= 3) {
+            const li = $(`<li><span>·</span><span>${selections[id].description}</span></li>`);
+            li.appendTo('#lifeTrajectory');
+            this.freshText(this.getLastRecord(),option);
+        }
+         // 替换结果
+        console.log('输出参数',formattedData);
+
+        // 更新属性
+        this.#property.upDataAI(formattedData);
+
+        // 更新到页面
+        this.freshTotal(this.getLastRecord(),this.tokens);
+        console.log('更新页面输入',this.getLastRecord());
+         
+
+ 
+    }
+    
+    // 更新页面
+    freshTotal(property,tokens) {
+        console.log('更新页面接受',property);
+        $("#lifeProperty").html(`
+            <li ><span>调用</span><span>${tokens}</span></li>
+            <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
+            <li><span>颜值</span><span>${property.LSCHR}${property.CHCHR >= 0 ? '+' : ''}${property.CHCHR}</span></li>
+            <li><span>智力</span><span>${property.LSINT}${property.CHINT >= 0 ? '+' : ''}${property.CHINT}</span></li>
+            <li><span>体质</span><span>${property.LSSTR}${property.CHSTR >= 0 ? '+' : ''}${property.CHSTR}</span></li>
+            <li><span>家境</span><span>${property.LSMNY}${property.CHMNY >= 0 ? '+' : ''}${property.CHMNY}</span></li>
+            <li><span>快乐</span><span>${property.LSSPR}${property.CHSPR >= 0 ? '+' : ''}${property.CHSPR}</span></li>
+        `);
+        $("#selection").html(`
+                <li id="option1">${property.SEL.selection1.description}</li>
+                <li id="option2">${property.SEL.selection2.description}</li>
+                <li id="option3">${property.SEL.selection3.description}</li>
+                <li>
+                <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
+                <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
+                </li>
+        `);
+    }
+
+    freshText(property, option) {
+        let selection;
+        let id;
+        if (option === 1) {
+            selection = property.SEL.selection1;
+            id = "option1";
+        } else if (option === 2) {
+            selection = property.SEL.selection2;
+            id = "option2";
+        } else if (option === 3) {
+            selection = property.SEL.selection3;
+            id = "option3";
+        }
+        $(`#${id}`).html(`颜值：${selection[option].CHR} 智力：${selection[option].INT} 体质：${selection[option].STR} 家庭：${selection[option].MNY} 快乐：${selection[option].SPR}`);
+    }
+
     restart(allocation) {
         this.#triggerTalents = {};
         this.#property.restart(allocation);
@@ -91,6 +289,12 @@ class Life {
     doEvent(eventId) {
         const { effect, next, description, postEvent } = this.#event.do(eventId, this.#property);
         this.#property.change(this.#property.TYPES.EVT, eventId);
+
+        // AI获取数据
+        this.checkSelections(eventId,description);
+        console.log('输入数据',description);
+        console.log('输入参数',effect)
+
         this.#property.effect(effect);
         const content = {
             type: this.#property.TYPES.EVT,

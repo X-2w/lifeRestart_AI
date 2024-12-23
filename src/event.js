@@ -1,5 +1,7 @@
 import { clone } from './functions/util.js';
 import { checkCondition } from './functions/condition.js';
+// import fs from 'fs';
+// import path from './data/events.json';
 
 class Event {
     constructor() {}
@@ -51,6 +53,19 @@ class Event {
         return { effect, postEvent, description };
     }
 
+    // 添加AI选项
+    addSelections(id, selection) {
+        this.#events[id].selectiones = (selection);
+        console.log("已添加到events",this.#events[id]);
+        // saveEventsToFile();
+    }
+
+    // 将#events中的内容写入data下的events.json文件
+    // saveEventsToFile() {
+    //     const filePath = path.resolve(__dirname, 'data', 'events.json');
+    //     fs.writeFileSync(filePath, JSON.stringify(this.#events, null, 2), 'utf-8');
+    //     console.log("Events have been saved to", filePath);
+    // }
 }
 
 export default Event;

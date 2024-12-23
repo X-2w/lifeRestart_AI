@@ -29,6 +29,7 @@ module.exports = {
       },
     ],
     hot: true,//热模块替换
+    watchFiles: ['src/**/*'], // 添加这一行
   },
   output: {
     path: path.resolve(__dirname, 'public'),
