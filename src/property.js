@@ -352,9 +352,9 @@ class Property {
         }
     }
 
-    updataselection(selections){
-    this.#data[this.TYPES.SEL] = selections
-    console.log("上传property选项",this.#data[this.TYPES.SEL])
+    upDataSelection(selections){
+        this.#data[this.TYPES.SEL] = selections
+        console.log("选项内容存储到网页",this.#data[this.TYPES.SEL])
     }
 
     isEnd() {

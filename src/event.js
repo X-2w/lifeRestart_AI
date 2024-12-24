@@ -1,21 +1,23 @@
 import { clone } from './functions/util.js';
 import { checkCondition } from './functions/condition.js';
-// import fs from 'fs';
-// import path from './data/events.json';
+import { saveAs } from 'file-saver';
 
 class Event {
-    constructor() {}
+    constructor() {
+    }
 
     #events;
 
-    initial({events}) {
+    initial({ events }) {
         this.#events = events;
-        for(const id in events) {
+        for (const id in events) {
             const event = events[id];
-            if(!event.branch) continue;
-            event.branch = event.branch.map(b=>{
-                b = b.split(':');
-                b[1] = Number(b[1]);
+            if (!event.branch) continue;
+            event.branch = event.branch.map(b => {
+                if (typeof b === 'string') {
+                    b = b.split(':');
+                    b[1] = Number(b[1]);
+                }
                 return b;
             });
         }
@@ -27,45 +29,56 @@ class Event {
 
     check(eventId, property) {
         const { include, exclude, NoRandom } = this.get(eventId);
-        if(NoRandom) return false;
-        if(exclude && checkCondition(property, exclude)) return false;
-        if(include) return checkCondition(property, include);
+        if (NoRandom) return false;
+        if (exclude && checkCondition(property, exclude)) return false;
+        if (include) return checkCondition(property, include);
         return true;
     }
 
     get(eventId) {
         const event = this.#events[eventId];
-        if(!event) throw new Error(`[ERROR] No Event[${eventId}]`);
+        if (!event) throw new Error(`[ERROR] No Event[${eventId}]`);
         return clone(event);
     }
 
     information(eventId) {
-        const { event: description } = this.get(eventId)
+        const { event: description } = this.get(eventId);
         return { description };
     }
 
     do(eventId, property) {
         const { effect, branch, event: description, postEvent } = this.get(eventId);
-        if(branch)
-            for(const [cond, next] of branch)
-                if(checkCondition(property, cond))
+        if (branch)
+            for (const [cond, next] of branch)
+                if (checkCondition(property, cond))
                     return { effect, next, description };
         return { effect, postEvent, description };
     }
 
     // 添加AI选项
     addSelections(id, selection) {
-        this.#events[id].selectiones = (selection);
-        console.log("已添加到events",this.#events[id]);
-        // saveEventsToFile();
+        this.#events[id].selections = selection;
+        console.log("已添加到events", this.#events[id]);
+        // if (downloadButton) {
+        //     downloadButton.addEventListener('click', () => {
+        //         this.writeEvents(this.#events);
+        //         console.log("已下载events.json");
+        //     });
+        // } else {
+        //     console.error("Element with ID 'downloaddata' not found.");
+        // }
     }
 
-    // 将#events中的内容写入data下的events.json文件
-    // saveEventsToFile() {
-    //     const filePath = path.resolve(__dirname, 'data', 'events.json');
-    //     fs.writeFileSync(filePath, JSON.stringify(this.#events, null, 2), 'utf-8');
-    //     console.log("Events have been saved to", filePath);
-    // }
-}
+
+
+    // 写入事件
+    // 写入事件
+        writeEvents() {
+            const jsonString = JSON.stringify(this.#events, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            saveAs(blob, 'events.json');
+            console.log("Events have been saved as events.json");
+        }
+    }
 
 export default Event;

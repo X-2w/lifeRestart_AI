@@ -1,13 +1,14 @@
 const path = require('path');
-const { hot } = require('webpack-dev-server/bin/cli-flags');
+const {
+  hot
+} = require('webpack-dev-server/bin/cli-flags');
 
 module.exports = {
   mode: 'development',
   entry: './src/index.js',
   devtool: 'eval-cheap-module-source-map',
   devServer: {
-    static: [
-      {
+    static: [{
         directory: path.join(__dirname, 'data'),
         publicPath: '/data',
       },
@@ -28,7 +29,7 @@ module.exports = {
         publicPath: '/lib',
       },
     ],
-    hot: true,//热模块替换
+    hot: true, //热模块替换
     watchFiles: ['src/**/*'], // 添加这一行
   },
   output: {
@@ -36,9 +37,13 @@ module.exports = {
     filename: 'bundle.js',
     clean: true,
   },
-  // resolve: {
-  //   extensions: ['.js'],
-  // },
+
+  resolve: {
+    fallback: {
+      "path": require.resolve("path-browserify")
+    }
+  },
+
   module: {
     rules: [{
       test: /\.js$/,

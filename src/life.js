@@ -32,13 +32,20 @@ class Life {
 
     checkSelections(id,description) {
         const event = this.#event.get(id);
+        console.log('获取到事件id,检查是否存在描述');
         if (!event.selections) {
+            console.log('不存在，调用API');
             clearTimeout(this.apiCallTimeout);
             this.apiCallTimeout = setTimeout(() => {
-                this.wenXinAPI(id,description);
-            }, 10000);
+                this.wenXinAPI(id, description);
+            }, 5000); // 十秒后调用
+        }else if (event.selections) {
+            console.log("存在，调用本地数据")
+            this.#property.upDataSelection(event.selections);
+            this.#property.upDataAI(event.selections.normal);
+            this.select(0);
         }else{
-
+            console.log("check error")
         }
     }
 
@@ -66,18 +73,17 @@ class Life {
     
     // ai获取选项
     async wenXinAPI(eventId,inputText) {
+        console.log('发送文本',inputText);
         const appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
         const secretKey = 'APdrEVtV6CQBjg9awvpTMSQUM9sN9j6K';
         const openId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI'; // Unique user ID
         const token ="24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
-        const age = this.getLastRecord().age
-        
         const requestBody = {
             message: {
                 content: {
                     type: "text",
                     value: {
-                        showText: age + inputText
+                        showText: inputText
                     }
                 },
                 source: appId,
@@ -117,8 +123,12 @@ class Life {
                 this.tokens++;   
                 
                 // 获取到的api数据添加到事件与添加到proper
+                this.#property.upDataSelection(nestedJsonObject);
+                this.#property.upDataAI(nestedJsonObject.normal);
                 this.#event.addSelections(eventId,nestedJsonObject);
-                this.#property.updataselection(nestedJsonObject)
+
+                console.log("AI发送数据",nestedJsonObject)
+                
                 
                 this.select(0);
 
@@ -130,10 +140,10 @@ class Life {
 
     select(option){
         const selections = this.getLastRecord().SEL;
-        console.log('选择',selections);
         let formattedData;
+        let id;
         if (option === 0) {
-            const id = "option0"
+            id = "option0"
             formattedData = {
                 CHR: selections.normal.CHR,
                 INT: selections.normal.INT,
@@ -142,7 +152,7 @@ class Life {
                 SPR: selections.normal.SPR,
             };
         } else if (option === 1) {
-            const id = "option1"
+            id = "option1"
             formattedData = {
                 CHR: selections.option1.CHR,
                 INT: selections.option1.INT,
@@ -151,7 +161,7 @@ class Life {
                 SPR: selections.option1.SPR,
             };
         } else if (option === 2) {
-            const id = "option2"
+            id = "option2"
             formattedData = {
                 CHR: selections.option2.CHR,
                 INT: selections.option2.INT,
@@ -160,7 +170,7 @@ class Life {
                 SPR: selections.option2.SPR,
             };
         } else if (option === 3) {
-            const id = "option3";
+            id = "option3";
             formattedData = {
                 CHR: selections.option3.CHR,
                 INT: selections.option3.INT,
@@ -174,43 +184,49 @@ class Life {
             const li = $(`<li><span>·</span><span>${selections[id].description}</span></li>`);
             li.appendTo('#lifeTrajectory');
             this.freshText(this.getLastRecord(),option);
+            // 更新属性
+            this.#property.upDataSelection(formattedData);
+            this.#property.upDataAI(formattedData.id);
         }
-         // 替换结果
-        console.log('输出参数',formattedData);
-
-        // 更新属性
-        this.#property.upDataAI(formattedData);
-
-        // 更新到页面
-        this.freshTotal(this.getLastRecord(),this.tokens);
-        console.log('更新页面输入',this.getLastRecord());
+        this.freshTotal();
          
 
  
     }
     
     // 更新页面
-    freshTotal(property,tokens) {
-        console.log('更新页面接受',property);
+    freshTotal() {
+                            setTimeout(() => {
+        const property = this.getLastRecord();
+        console.log('更新页面输入',property)
+        const tokens = this.getStoredTokens();
         $("#lifeProperty").html(`
             <li ><span>调用</span><span>${tokens}</span></li>
             <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
-            <li><span>颜值</span><span>${property.LSCHR}${property.CHCHR >= 0 ? '+' : ''}${property.CHCHR}</span></li>
-            <li><span>智力</span><span>${property.LSINT}${property.CHINT >= 0 ? '+' : ''}${property.CHINT}</span></li>
-            <li><span>体质</span><span>${property.LSSTR}${property.CHSTR >= 0 ? '+' : ''}${property.CHSTR}</span></li>
-            <li><span>家境</span><span>${property.LSMNY}${property.CHMNY >= 0 ? '+' : ''}${property.CHMNY}</span></li>
-            <li><span>快乐</span><span>${property.LSSPR}${property.CHSPR >= 0 ? '+' : ''}${property.CHSPR}</span></li>
+            <li><span>颜值</span><span>${property.LSCHR}${property.CHCHR >= 0 ? '+' : ''} ${property.CHCHR}</span></li>
+            <li><span>智力</span><span>${property.LSINT}${property.CHINT >= 0 ? '+' : ''} ${property.CHINT}</span></li>
+            <li><span>体质</span><span>${property.LSSTR}${property.CHSTR >= 0 ? '+' : ''} ${property.CHSTR}</span></li>
+            <li><span>家境</span><span>${property.LSMNY}${property.CHMNY >= 0 ? '+' : ''} ${property.CHMNY}</span></li>
+            <li><span>快乐</span><span>${property.LSSPR}${property.CHSPR >= 0 ? '+' : ''} ${property.CHSPR}</span></li>
         `);
         $("#selection").html(`
-                <li id="option1">${property.SEL.selection1.description}</li>
-                <li id="option2">${property.SEL.selection2.description}</li>
-                <li id="option3">${property.SEL.selection3.description}</li>
+                <li id="option1" style="user-select:auto;">${property.SEL.selection1.description}</li>
+                <li id="option2" style="user-select:auto;">${property.SEL.selection2.description}</li>
+                <li id="option3" style="user-select:auto;">${property.SEL.selection3.description}</li>
                 <li>
                 <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
                 <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
                 </li>
         `);
-    }
+        console.log('AI更新页面点数变化',
+            property.CHCHR,
+            property.CHINT,
+            property.CHSTR,
+            property.CHMNY,
+            property.CHSPR)
+        }, 2000);}
+
+
 
     freshText(property, option) {
         let selection;
@@ -225,7 +241,7 @@ class Life {
             selection = property.SEL.selection3;
             id = "option3";
         }
-        $(`#${id}`).html(`颜值：${selection[option].CHR} 智力：${selection[option].INT} 体质：${selection[option].STR} 家庭：${selection[option].MNY} 快乐：${selection[option].SPR}`);
+        $(`#${id}`).html(`颜值：${selection.CHR} 智力：${selection.INT} 体质：${selection.STR} 家庭：${selection.MNY} 快乐：${selection.SPR}`);
     }
 
     restart(allocation) {
@@ -292,8 +308,6 @@ class Life {
 
         // AI获取数据
         this.checkSelections(eventId,description);
-        console.log('输入数据',description);
-        console.log('输入参数',effect)
 
         this.#property.effect(effect);
         const content = {
@@ -407,6 +421,9 @@ class Life {
             this.#achievement.Opportunity.END,
             this.#property
         )
+    }
+    writeEventss(){
+        this.#event.writeEvents()
     }
 }
 
