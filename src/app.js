@@ -422,36 +422,23 @@ class App{
         // AI窗口点击事件
         trajectoryPage.mounted = () => {
             try {
-            // trajectoryPage
-            //     .find('#selection')
-            //     .click(() => {
-            //     // this.#life.select(0);
-            //     console.log('normal')
-            //     });
+            // 使用事件委托处理 #option1, #option2, #option3 的点击事件
             trajectoryPage
-                .find('#option1')
-                .click(() => {
-                this.#life.select(1);
-                console.log('s1')
-                });
-            trajectoryPage
-                .find('#option2')
-                .click(() => {
-                this.#life.select(2);
-                console.log('s2')
-                });
-            trajectoryPage
-                .find('#option3')
-                .click(() => {
-                this.#life.select(3);
-                console.log('s3')
+                .find('#selection')
+                .on('click', '#option1, #option2, #option3', (event) => {
+                const optionId = event.target.id;
+                if (!$(event.target).hasClass('disabled')) {
+                    const optionNumber = parseInt(optionId.replace('option', ''), 10);
+                    this.#life.select(optionNumber);
+                    console.log(`s${optionNumber}`);
+                    $('#option1, #option2, #option3').addClass('disabled');
+                    $(event.target).removeClass('disabled');
+                }
                 });
             } catch (error) {
             console.error('An error occurred:', error);
             }
         };
-
-
 
 
         // html2canvas
@@ -770,7 +757,7 @@ class App{
     get times() {return this.#life?.times || 0;}
     set times(v) { if(this.#life) this.#life.times = v };
     
-
+    
 }
 
 export default App;

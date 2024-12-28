@@ -49,6 +49,25 @@ class Life {
         }
     }
 
+    checkSelections1(id,selectionid,description) {
+        const event = this.#event.get(id);
+        console.log('获取到事件id,检查是否存在描述');
+        if (!event.selections[selectionid].selections) {
+            console.log('不存在，调用API');
+            clearTimeout(this.apiCallTimeout);
+            this.apiCallTimeout = setTimeout(() => {
+                this.wenXinAPI(id, description);
+            }, 5000); // 十秒后调用
+        }else if (event.selections[selectionid].selections) {
+            console.log("存在，调用本地数据")
+            this.#property.upDataSelection(event.selections);
+            this.#property.upDataAI(event.selections.normal);
+            this.select(0);
+        }else{
+            console.log("check error")
+        }
+    }
+
     // 调用记录
     tokens = this.getStoredTokens();
 
@@ -143,7 +162,7 @@ class Life {
         let formattedData;
         let id;
         if (option === 0) {
-            id = "option0"
+            id = "selection1"
             formattedData = {
                 CHR: selections.normal.CHR,
                 INT: selections.normal.INT,
@@ -152,31 +171,31 @@ class Life {
                 SPR: selections.normal.SPR,
             };
         } else if (option === 1) {
-            id = "option1"
+            id = "selection1"
             formattedData = {
-                CHR: selections.option1.CHR,
-                INT: selections.option1.INT,
-                STR: selections.option1.STR,
-                MNY: selections.option1.MNY,
-                SPR: selections.option1.SPR,
+                CHR: selections.selection1.CHR,
+                INT: selections.selection1.INT,
+                STR: selections.selection1.STR,
+                MNY: selections.selection1.MNY,
+                SPR: selections.selection1.SPR,
             };
         } else if (option === 2) {
-            id = "option2"
+            id = "selection2"
             formattedData = {
-                CHR: selections.option2.CHR,
-                INT: selections.option2.INT,
-                STR: selections.option2.STR,
-                MNY: selections.option2.MNY,
-                SPR: selections.option2.SPR,
+                CHR: selections.selection2.CHR,
+                INT: selections.selection2.INT,
+                STR: selections.selection2.STR,
+                MNY: selections.selection2.MNY,
+                SPR: selections.selection2.SPR,
             };
         } else if (option === 3) {
-            id = "option3";
+            id = "selection3";
             formattedData = {
-                CHR: selections.option3.CHR,
-                INT: selections.option3.INT,
-                STR: selections.option3.STR,
-                MNY: selections.option3.MNY,
-                SPR: selections.option3.SPR,
+                CHR: selections.selection3.CHR,
+                INT: selections.selection3.INT,
+                STR: selections.selection3.STR,
+                MNY: selections.selection3.MNY,
+                SPR: selections.selection3.SPR,
             };
         };  
         // 添加到页面
@@ -184,19 +203,11 @@ class Life {
             const li = $(`<li><span>·</span><span>${selections[id].description}</span></li>`);
             li.appendTo('#lifeTrajectory');
             this.freshText(this.getLastRecord(),option);
-            // 更新属性
-            this.#property.upDataSelection(formattedData);
+            // 更新属性到网页数据
             this.#property.upDataAI(formattedData.id);
-        }
-        this.freshTotal();
-         
 
- 
-    }
-    
-    // 更新页面
-    freshTotal() {
-                            setTimeout(() => {
+        // this.checkSelections(id,selections[id].description)
+
         const property = this.getLastRecord();
         console.log('更新页面输入',property)
         const tokens = this.getStoredTokens();
@@ -208,23 +219,42 @@ class Life {
             <li><span>体质</span><span>${property.LSSTR}${property.CHSTR >= 0 ? '+' : ''} ${property.CHSTR}</span></li>
             <li><span>家境</span><span>${property.LSMNY}${property.CHMNY >= 0 ? '+' : ''} ${property.CHMNY}</span></li>
             <li><span>快乐</span><span>${property.LSSPR}${property.CHSPR >= 0 ? '+' : ''} ${property.CHSPR}</span></li>
-        `);
-        $("#selection").html(`
-                <li id="option1" style="user-select:auto;">${property.SEL.selection1.description}</li>
-                <li id="option2" style="user-select:auto;">${property.SEL.selection2.description}</li>
-                <li id="option3" style="user-select:auto;">${property.SEL.selection3.description}</li>
-                <li>
-                <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
-                <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
-                </li>
-        `);
-        console.log('AI更新页面点数变化',
-            property.CHCHR,
-            property.CHINT,
-            property.CHSTR,
-            property.CHMNY,
-            property.CHSPR)
-        }, 2000);}
+        `);}else{
+            this.freshTotal();
+        }
+    }
+    
+    // 更新页面
+    freshTotal() {
+        setTimeout(() => {
+            const property = this.getLastRecord();
+            console.log('更新页面输入',property)
+            const tokens = this.getStoredTokens();
+            $("#lifeProperty").html(`
+                <li ><span>调用</span><span>${tokens}</span></li>
+                <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
+                <li><span>颜值</span><span>${property.LSCHR}${property.CHCHR >= 0 ? '+' : ''} ${property.CHCHR}</span></li>
+                <li><span>智力</span><span>${property.LSINT}${property.CHINT >= 0 ? '+' : ''} ${property.CHINT}</span></li>
+                <li><span>体质</span><span>${property.LSSTR}${property.CHSTR >= 0 ? '+' : ''} ${property.CHSTR}</span></li>
+                <li><span>家境</span><span>${property.LSMNY}${property.CHMNY >= 0 ? '+' : ''} ${property.CHMNY}</span></li>
+                <li><span>快乐</span><span>${property.LSSPR}${property.CHSPR >= 0 ? '+' : ''} ${property.CHSPR}</span></li>
+            `);
+            $("#selection").html(`
+                    <li id="option1" style="user-select:auto;">${property.SEL.selection1.description}</li>
+                    <li id="option2" style="user-select:auto;">${property.SEL.selection2.description}</li>
+                    <li id="option3" style="user-select:auto;">${property.SEL.selection3.description}</li>
+                    <li>
+                    <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
+                    <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
+                    </li>
+            `);
+            console.log('AI更新页面点数变化',
+                property.CHCHR,
+                property.CHINT,
+                property.CHSTR,
+                property.CHMNY,
+                property.CHSPR)
+        }, 200);}
 
 
 
