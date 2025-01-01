@@ -349,9 +349,9 @@ class App{
             </ul>
             <ul id="lifeTrajectory" class="lifeTrajectory"></ul>
             <ul id="selection" class="lifeTrajectory" style="flex:0.2;overflow:unset;">
-                <li id="option1">信息1</li>
-                <li id="option2">信息2</li>
-                <li id="option3">信息3</li>
+                <li id="option1">正在调用API,等待约10秒。F12可查看进度</li>
+                <li id="option2">正在调用API,等待约10秒。F12可查看进度</li>
+                <li id="option3">正在调用API,等待约10秒。F12可查看进度</li>
                 <li>
                     <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
                     <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
@@ -426,8 +426,12 @@ class App{
             trajectoryPage
                 .find('#selection')
                 .on('click', '#option1, #option2, #option3', (event) => {
+                if (this.#life.isFetching) {
+                    console.log('API 调用进行中，点击事件已禁用。');
+                    return; // 如果 API 调用进行中，阻止事件触发
+                }
                 const optionId = event.target.id;
-                if (!$(event.target).hasClass('disabled')) {
+                if (!$('#option1, #option2, #option3').hasClass('disabled')) {
                     const optionNumber = parseInt(optionId.replace('option', ''), 10);
                     this.#life.select(optionNumber);
                     console.log(`s${optionNumber}`);

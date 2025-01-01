@@ -9,12 +9,21 @@ class Life {
         this.#event = new Event();
         this.#talent = new Talent();
         this.#achievement = new Achievement();
+        this.#isFetching = false; // 添加此行
+    }
+
+    get isFetching() {
+        return this.#isFetching;
+    }
+    set isFetching(value) {
+        this.#isFetching = value;
     }
 
     #property;
     #event;
     #talent;
     #achievement;
+    #isFetching;
     #triggerTalents;
 
     async initial() {
@@ -38,7 +47,7 @@ class Life {
             clearTimeout(this.apiCallTimeout);
             this.apiCallTimeout = setTimeout(() => {
                 this.wenXinAPI(id, description);
-            }, 5000); // 十秒后调用
+            }, 5000); 
         }else if (event.selections) {
             console.log("存在，调用本地数据")
             this.#property.upDataSelection(event.selections);
@@ -92,7 +101,9 @@ class Life {
     
     // ai获取选项
     async wenXinAPI(eventId,inputText) {
-        console.log('发送文本',inputText);
+        this.isFetching = true; // 在 API 调用前设置标志为 true
+        const age = this.getLastRecord().AGE;
+        console.log('发送文本',age + `岁的时候，` + inputText);
         const appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
         const secretKey = 'APdrEVtV6CQBjg9awvpTMSQUM9sN9j6K';
         const openId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI'; // Unique user ID
@@ -102,7 +113,7 @@ class Life {
                 content: {
                     type: "text",
                     value: {
-                        showText: inputText
+                        showText: age + `岁的时候，` + inputText
                     }
                 },
                 source: appId,
@@ -154,6 +165,8 @@ class Life {
 
             } catch (error) {
                 console.error(error)
+            } finally {
+                this.isFetching = false; // 在 API 调用后重置标志
             }
     }
 
@@ -207,7 +220,14 @@ class Life {
             this.#property.upDataAI(formattedData.id);
 
         // this.checkSelections(id,selections[id].description)
+            this.freshProperty();
+        ;}else{
+            this.freshTotal();
+        }
 
+    }
+
+    freshProperty(){
         const property = this.getLastRecord();
         console.log('更新页面输入',property)
         const tokens = this.getStoredTokens();
@@ -219,9 +239,7 @@ class Life {
             <li><span>体质</span><span>${property.LSSTR}${property.CHSTR >= 0 ? '+' : ''} ${property.CHSTR}</span></li>
             <li><span>家境</span><span>${property.LSMNY}${property.CHMNY >= 0 ? '+' : ''} ${property.CHMNY}</span></li>
             <li><span>快乐</span><span>${property.LSSPR}${property.CHSPR >= 0 ? '+' : ''} ${property.CHSPR}</span></li>
-        `);}else{
-            this.freshTotal();
-        }
+        `)
     }
     
     // 更新页面
