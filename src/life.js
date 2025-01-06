@@ -10,6 +10,8 @@ class Life {
         this.#talent = new Talent();
         this.#achievement = new Achievement();
         this.#isFetching = false; // 添加此行
+        this.#currentEvent = {};
+        this.#process = [];
     }
 
     get isFetching() {
@@ -25,6 +27,9 @@ class Life {
     #achievement;
     #isFetching;
     #triggerTalents;
+    #currentEvent;
+    #process;
+    apiCallTimeout;
 
     async initial() {
         const [age, talents, events, achievements] = await Promise.all([
@@ -39,41 +44,59 @@ class Life {
         this.#achievement.initial({achievements});
     }
 
-    checkSelections(id,description) {
-        const event = this.#event.get(id);
+    checkSelections(description) {
         console.log('获取到事件id,检查是否存在描述');
-        if (!event.selections) {
-            console.log('不存在，调用API');
+        if (!this.#currentEvent.selections) {
+            console.log('不存在选项，调用API');
             clearTimeout(this.apiCallTimeout);
-            this.apiCallTimeout = setTimeout(() => {
-                this.wenXinAPI(id, description);
+            this.apiCallTimeout = setTimeout(async () => {
+                this.#currentEvent.selections = await this.wenXinAPI(description);
+                console.log('更新当前事件为',this.#currentEvent);
             }, 5000); 
-        }else if (event.selections) {
-            console.log("存在，调用本地数据")
-            this.#property.upDataSelection(event.selections);
-            this.#property.upDataAI(event.selections.normal);
+        }else if (this.#currentEvent.selections) {
+            console.log("存在选项，调用本地数据")
+            this.#property.upDataSelection(this.#currentEvent.selections);
+            this.#property.upDataAI(this.#currentEvent.selections.normal);
             this.select(0);
         }else{
             console.log("check error")
         }
     }
 
-    checkSelections1(id,selectionid,description) {
-        const event = this.#event.get(id);
+    async checkSelections1(description, path) {
         console.log('获取到事件id,检查是否存在描述');
-        if (!event.selections[selectionid].selections) {
-            console.log('不存在，调用API');
+    
+        const propertyAccessArray = path.split('.');
+        let currentObject = this.#currentEvent;
+        for (let i = 0; i < propertyAccessArray.length; i++) {
+            if (currentObject[propertyAccessArray[i]] === undefined) {
+                currentObject = undefined;
+                break;
+            }
+            currentObject = currentObject[propertyAccessArray[i]];
+        }
+        if (!currentObject) {
+            console.log('不存在选项，调用API', path);
             clearTimeout(this.apiCallTimeout);
-            this.apiCallTimeout = setTimeout(() => {
-                this.wenXinAPI(id, description);
-            }, 5000); // 十秒后调用
-        }else if (event.selections[selectionid].selections) {
-            console.log("存在，调用本地数据")
-            this.#property.upDataSelection(event.selections);
-            this.#property.upDataAI(event.selections.normal);
+            this.apiCallTimeout = setTimeout(async () => {
+                const result = await this.wenXinAPI(description);
+                this.setNestedProperty(this.#currentEvent, path, result);
+                console.log('更新当前事件为', this.#currentEvent);
+            }, 5000);
+        } else {
+            console.log("存在选项，调用本地数据");
+            this.#property.upDataSelection(currentObject);
+            this.#property.upDataAI(currentObject.normal);
             this.select(0);
-        }else{
-            console.log("check error")
+        }
+    }
+    
+    setNestedProperty(obj, propertyPath, value) {
+        const parts = propertyPath.split('.');
+        const last = parts.pop();
+        const target = parts.reduce((acc, part) => acc && acc[part], obj);
+        if (target) {
+            target[last] = value;
         }
     }
 
@@ -100,13 +123,13 @@ class Life {
     }
     
     // ai获取选项
-    async wenXinAPI(eventId,inputText) {
+    async wenXinAPI(inputText) {
         this.isFetching = true; // 在 API 调用前设置标志为 true
         const age = this.getLastRecord().AGE;
         console.log('发送文本',age + `岁的时候，` + inputText);
         const appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
-        const secretKey = 'APdrEVtV6CQBjg9awvpTMSQUM9sN9j6K';
-        const openId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI'; // Unique user ID
+        const secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
+        const openId = '01'; // Unique user ID
         const token ="24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
         const requestBody = {
             message: {
@@ -155,22 +178,23 @@ class Life {
                 // 获取到的api数据添加到事件与添加到proper
                 this.#property.upDataSelection(nestedJsonObject);
                 this.#property.upDataAI(nestedJsonObject.normal);
-                this.#event.addSelections(eventId,nestedJsonObject);
+
 
                 console.log("AI发送数据",nestedJsonObject)
-                
-                
                 this.select(0);
+                return nestedJsonObject
+                
 
 
             } catch (error) {
                 console.error(error)
+                console.log('智障文心又乱给出错误格式的数据了');
             } finally {
                 this.isFetching = false; // 在 API 调用后重置标志
             }
     }
 
-    select(option){
+    select(option,inputText){
         const selections = this.getLastRecord().SEL;
         let formattedData;
         let id;
@@ -210,21 +234,91 @@ class Life {
                 MNY: selections.selection3.MNY,
                 SPR: selections.selection3.SPR,
             };
-        };  
+        } else if(option === 4) {
+            id = "selection4"
+            this.wenXinAPI(inputText);
+        }
         // 添加到页面
         if (option >= 1 && option <= 3) {
-            const li = $(`<li><span>·</span><span>${selections[id].description}</span></li>`);
+            let season;
+            switch (this.#process.length) {
+                case 0:
+                    season = '春：';
+                    break;
+                case 1:
+                    season = '夏：';
+                    break;
+                case 2:
+                    season = '秋：';
+                    break;
+                case 3:
+                    season = '冬：';
+                    break;
+                default:
+                    season = '';
+            }
+            const li = $(`<li><span>${season}</span><span>${selections[id].description}</span></li>`);
             li.appendTo('#lifeTrajectory');
             this.freshText(this.getLastRecord(),option);
             // 更新属性到网页数据
             this.#property.upDataAI(formattedData.id);
 
-        // this.checkSelections(id,selections[id].description)
+            this.selectionBack(id)            
+            this.#event.addSelections(this.#currentEvent);
+            // 更新点数
             this.freshProperty();
-        ;}else{
+        }else if (option == 4) {
+            this.freshTotal();
+            let season;
+            switch (this.#process.length) {
+                case 0:
+                    season = '春：';
+                    break;
+                case 1:
+                    season = '夏：';
+                    break;
+                case 2:
+                    season = '秋：';
+                    break;
+                case 3:
+                    season = '冬：';
+                    break;
+                default:
+                    season = '';
+            }
+            const li = $(`<li><span>${season}</span><span>${inputText}</span></li>`);
+            li.appendTo('#lifeTrajectory');
+        }else{
+            this.#event.addSelections(this.#currentEvent);
             this.freshTotal();
         }
 
+    }
+
+    selectionBack(id) {
+        if (this.#process.length < 3) {
+            this.#process.push(id);
+            console.log('添加流程', this.#process);
+            let path = 'selections';
+            for (let i = 0; i < this.#process.length; i++) {
+                path += `.${this.#process[i]}.selections`;
+            }
+            console.log('检索嵌套层次', path);
+            this.checkSelections1(this.getLastRecord().SEL[id].description, path);
+        } else {
+            this.#process = [];
+            setTimeout(() => {
+                $("#selection").html(`
+                    <li id="option1" style="user-select:auto;">今年已结束</li>
+                    <li id="option2" style="user-select:auto;">今年已结束</li>
+                    <li id="option3" style="user-select:auto;">今年已结束</li>
+                    <li>
+                    <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem;text-align: center;margin:3px;">
+                    <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem;  text-align: center;margin:3px;">
+                    </li>
+                `);
+            }, 2000);
+        }
     }
 
     freshProperty(){
@@ -262,8 +356,8 @@ class Life {
                     <li id="option2" style="user-select:auto;">${property.SEL.selection2.description}</li>
                     <li id="option3" style="user-select:auto;">${property.SEL.selection3.description}</li>
                     <li>
-                    <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
-                    <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
+                    <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem;text-align: center;margin:3px;">
+                    <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem;  text-align: center;margin:3px;">
                     </li>
             `);
             console.log('AI更新页面点数变化',
@@ -355,7 +449,9 @@ class Life {
         this.#property.change(this.#property.TYPES.EVT, eventId);
 
         // AI获取数据
-        this.checkSelections(eventId,description);
+        this.#currentEvent = this.#event.get(eventId);
+        console.log('当前事件',this.#currentEvent)
+        this.checkSelections(description);
 
         this.#property.effect(effect);
         const content = {

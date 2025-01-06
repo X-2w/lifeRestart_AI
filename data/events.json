@@ -58,7 +58,40 @@
         "INT": -1,
         "STR": -1,
         "MNY": 2,
-        "SPR": 3
+        "SPR": 3,
+        "selections": {
+          "normal": {
+            "CHR": 4,
+            "INT": -1,
+            "STR": 0,
+            "MNY": 0,
+            "SPR": 2
+          },
+          "selection1": {
+            "description": "你从小练习化妆，成了‘婴儿界’的颜值担当，直播时粉丝无数，连妈妈都自豪不已！",
+            "CHR": 6,
+            "INT": 0,
+            "STR": 0,
+            "MNY": 1,
+            "SPR": 4
+          },
+          "selection2": {
+            "description": "你化妆技术太差，每次直播都像‘小鬼当家’，把观众逗得哈哈大笑，却没人关注你的颜值。",
+            "CHR": 2,
+            "INT": -2,
+            "STR": 0,
+            "MNY": -1,
+            "SPR": 1
+          },
+          "selection3": {
+            "description": "你太过注重化妆打扮，结果把皮肤弄坏了，成了‘敏感肌小公主’，直播时只能戴口罩。",
+            "CHR": 1,
+            "INT": -1,
+            "STR": 0,
+            "MNY": 0,
+            "SPR": -1
+          }
+        }
       },
       "selection2": {
         "description": "沉迷游戏，天天熬夜打游戏，成为电竞少年。",
@@ -66,7 +99,40 @@
         "INT": 1,
         "STR": -3,
         "MNY": -2,
-        "SPR": 1
+        "SPR": 1,
+        "selections": {
+          "normal": {
+            "CHR": 2,
+            "INT": -1,
+            "STR": 0,
+            "MNY": -1,
+            "SPR": 1
+          },
+          "selection1": {
+            "description": "你决定拜师学艺，苦练化妆技术，终于成了‘婴儿界’的美妆博主，粉丝无数！",
+            "CHR": 4,
+            "INT": 1,
+            "STR": 0,
+            "MNY": 0,
+            "SPR": 3
+          },
+          "selection2": {
+            "description": "你放弃化妆，开始走‘自然萌’路线，结果意外收获了一批忠实粉丝，大家都说你可爱极了！",
+            "CHR": 3,
+            "INT": 0,
+            "STR": 0,
+            "MNY": 0,
+            "SPR": 2
+          },
+          "selection3": {
+            "description": "你决定用搞笑征服世界，每次直播都故意化得夸张，成了‘婴儿界’的喜剧之王，粉丝都说你是‘小鬼当家2.0’！",
+            "CHR": 1,
+            "INT": -2,
+            "STR": 0,
+            "MNY": -1,
+            "SPR": 0
+          }
+        }
       },
       "selection3": {
         "description": "坚信知识改变命运，从小刻苦学习，成为学霸。",

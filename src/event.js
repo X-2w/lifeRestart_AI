@@ -8,6 +8,7 @@ class Event {
 
     #events;
 
+
     initial({ events }) {
         this.#events = events;
         for (const id in events) {
@@ -56,9 +57,9 @@ class Event {
     }
 
     // 添加AI选项
-    addSelections(id, selection) {
-        this.#events[id].selections = selection;
-        console.log("已添加到events", this.#events[id]);
+    addSelections(currentEvent) {
+        this.#events[currentEvent.id] = currentEvent;
+        console.log("已添加到events", this.#events[currentEvent.id]);
         // if (downloadButton) {
         //     downloadButton.addEventListener('click', () => {
         //         this.writeEvents(this.#events);

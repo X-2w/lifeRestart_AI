@@ -353,8 +353,8 @@ class App{
                 <li id="option2">正在调用API,等待约10秒。F12可查看进度</li>
                 <li id="option3">正在调用API,等待约10秒。F12可查看进度</li>
                 <li>
-                    <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
-                    <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem; border: 0.1rem #EEEEEE solid; background-color: #393E46; color: #EEEEEE; text-align: center;margin:3px;">
+                    <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem;text-align: center;margin:3px;">
+                    <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem;  text-align: center;margin:3px;">
                 </li>
             </ul>
             <div class="btn-area">
@@ -422,25 +422,38 @@ class App{
         // AI窗口点击事件
         trajectoryPage.mounted = () => {
             try {
-            // 使用事件委托处理 #option1, #option2, #option3 的点击事件
-            trajectoryPage
-                .find('#selection')
-                .on('click', '#option1, #option2, #option3', (event) => {
-                if (this.#life.isFetching) {
-                    console.log('API 调用进行中，点击事件已禁用。');
-                    return; // 如果 API 调用进行中，阻止事件触发
-                }
-                const optionId = event.target.id;
-                if (!$('#option1, #option2, #option3').hasClass('disabled')) {
-                    const optionNumber = parseInt(optionId.replace('option', ''), 10);
-                    this.#life.select(optionNumber);
-                    console.log(`s${optionNumber}`);
-                    $('#option1, #option2, #option3').addClass('disabled');
-                    $(event.target).removeClass('disabled');
-                }
-                });
+                // 使用事件委托处理 #option1, #option2, #option3 的点击事件
+                trajectoryPage
+                    .find('#selection')
+                    .on('click', '#option1, #option2, #option3', (event) => {
+                        if (this.#life.isFetching) {
+                            console.log('API 调用进行中，点击事件已禁用。');
+                            return; // 如果 API 调用进行中，阻止事件触发
+                        }
+                        const optionId = event.target.id;
+                        if (!$('#option1, #option2, #option3').hasClass('disabled')) {
+                            const optionNumber = parseInt(optionId.replace('option', ''), 10);
+                            this.#life.select(optionNumber);
+                            console.log(`s${optionNumber}`);
+                            $('#option1, #option2, #option3').addClass('disabled');
+                            $(event.target).removeClass('disabled');
+                        }
+                    });
+        
+                // 检测点击提交按钮的事件
+                trajectoryPage
+                    .find('#selection')
+                    .on('click', 'input[type="submit"]', () => {
+                        if (this.#life.isFetching) {
+                            console.log('API 调用进行中，点击事件已禁用。');
+                            return; // 如果 API 调用进行中，阻止事件触发
+                        }
+                        const inputText = trajectoryPage.find('#option4').val();
+                        this.#life.select(4,inputText);
+                        console.log('提交按钮点击',inputText);
+                    });
             } catch (error) {
-            console.error('An error occurred:', error);
+                console.error('An error occurred:', error);
             }
         };
 
