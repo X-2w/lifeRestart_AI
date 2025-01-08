@@ -52,7 +52,7 @@ class Life {
             this.apiCallTimeout = setTimeout(async () => {
                 this.#currentEvent.selections = await this.wenXinAPI(description);
                 console.log('更新当前事件为',this.#currentEvent);
-            }, 5000); 
+            }, 2000); 
         }else if (this.#currentEvent.selections) {
             console.log("存在选项，调用本地数据")
             this.#property.upDataSelection(this.#currentEvent.selections);
@@ -82,7 +82,7 @@ class Life {
                 const result = await this.wenXinAPI(description);
                 this.setNestedProperty(this.#currentEvent, path, result);
                 console.log('更新当前事件为', this.#currentEvent);
-            }, 5000);
+            }, 2000);
         } else {
             console.log("存在选项，调用本地数据");
             this.#property.upDataSelection(currentObject);
@@ -129,7 +129,7 @@ class Life {
         console.log('发送文本',age + `岁的时候，` + inputText);
         const appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
         const secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
-        const openId = '01'; // Unique user ID
+        const openId = 'getanswer'; // Unique user ID
         const token ="24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
         const requestBody = {
             message: {
@@ -157,7 +157,7 @@ class Life {
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
                 }
-    
+
                 const parsedData = await response.json();
 
                 console.log('接收到数据转换为json',parsedData);
@@ -288,6 +288,22 @@ class Life {
             }
             const li = $(`<li><span>${season}</span><span>${inputText}</span></li>`);
             li.appendTo('#lifeTrajectory');
+            if (this.#process.length < 3) {
+                this.#process.push(id);
+            }else{
+                this.#process = [];
+                setTimeout(() => {
+                    $("#selection").html(`
+                        <li id="option1" style="user-select:auto;">今年已结束</li>
+                        <li id="option2" style="user-select:auto;">今年已结束</li>
+                        <li id="option3" style="user-select:auto;">今年已结束</li>
+                        <li>
+                        <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem;text-align: center;margin:3px;">
+                        <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem;  text-align: center;margin:3px;">
+                        </li>
+                    `);
+                }, 200);
+            }
         }else{
             this.#event.addSelections(this.#currentEvent);
             this.freshTotal();
@@ -572,4 +588,3 @@ class Life {
 }
 
 export default Life;
-

@@ -430,6 +430,10 @@ class App{
                             console.log('API 调用进行中，点击事件已禁用。');
                             return; // 如果 API 调用进行中，阻止事件触发
                         }
+                        if ($('#option1').text() === '今年已结束' || $('#option2').text() === '今年已结束' || $('#option3').text() === '今年已结束') {
+                            console.log('今年已结束，点击事件已禁用。');
+                            return; // 如果选项中有“今年已结束”，阻止事件触发
+                        }
                         const optionId = event.target.id;
                         if (!$('#option1, #option2, #option3').hasClass('disabled')) {
                             const optionNumber = parseInt(optionId.replace('option', ''), 10);
@@ -447,6 +451,10 @@ class App{
                         if (this.#life.isFetching) {
                             console.log('API 调用进行中，点击事件已禁用。');
                             return; // 如果 API 调用进行中，阻止事件触发
+                        }
+                        if ($('#option1').text() === '今年已结束' || $('#option2').text() === '今年已结束' || $('#option3').text() === '今年已结束') {
+                            console.log('今年已结束，点击事件已禁用。');
+                            return; // 如果选项中有“今年已结束”，阻止事件触发
                         }
                         const inputText = trajectoryPage.find('#option4').val();
                         this.#life.select(4,inputText);
