@@ -17,7 +17,7 @@
 1. Clone project code.
 
 ```bash
-git clone git@github.com:VickScarlet/lifeRestart.git my-project
+git clone https://github.com/X-2w/lifeRestart_AI.git my-project
 cd my-project
 ```
 
@@ -58,4 +58,3 @@ node repl
 
 </details>
 
-> More instructions at [documentation](https://liferestart.syaro.io/).
