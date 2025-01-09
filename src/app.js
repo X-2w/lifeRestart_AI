@@ -345,7 +345,6 @@ class App{
         const trajectoryPage = $(`
         <div id="main">
             <ul id="lifeProperty" class="lifeProperty">
-                <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
             </ul>
             <ul id="lifeTrajectory" class="lifeTrajectory"></ul>
             <ul id="selection" class="lifeTrajectory" style="flex:0.2;overflow:unset;">
@@ -370,6 +369,11 @@ class App{
         trajectoryPage
             .find('#lifeTrajectory')
             .click(()=>{
+                if (this.#life.isFetching) {
+                    console.log('API 调用进行中，点击事件已禁用。',this.#life.isFetching);
+                    this.hint('API 调用进行中，点击事件已禁用。');
+                    return; // 如果 API 调用进行中，阻止事件触发
+                }
                 if(this.#isEnd) return;
                 const trajectory = this.#life.next();
                 const { age, content, isEnd } = trajectory;
@@ -400,22 +404,12 @@ class App{
 
                         $("#lifeProperty").html(`
                             <li ><span>调用</span><span>${tokens}</span></li>
-                            <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
                             <li><span>颜值</span><span>${property.CHR}</span></li>
                             <li><span>智力</span><span>${property.INT}</span></li>
                             <li><span>体质</span><span>${property.STR}</span></li>
                             <li><span>家境</span><span>${property.MNY}</span></li>
                             <li><span>快乐</span><span>${property.SPR}</span></li>
                         `);
-
-                    console.log('原版更新页面点数',
-                        property.CHR,
-                        property.INT,
-                        property.STR,
-                        property.MNY,
-                        property.SPR
-                    )
-
                 }
             });
             
@@ -428,10 +422,12 @@ class App{
                     .on('click', '#option1, #option2, #option3', (event) => {
                         if (this.#life.isFetching) {
                             console.log('API 调用进行中，点击事件已禁用。');
+                            this.hint('API 调用进行中，点击事件已禁用。');
                             return; // 如果 API 调用进行中，阻止事件触发
                         }
                         if ($('#option1').text() === '今年已结束' || $('#option2').text() === '今年已结束' || $('#option3').text() === '今年已结束') {
                             console.log('今年已结束，点击事件已禁用。');
+                            this.hint('今年已结束，点击事件已禁用。');
                             return; // 如果选项中有“今年已结束”，阻止事件触发
                         }
                         const optionId = event.target.id;
@@ -450,15 +446,22 @@ class App{
                     .on('click', 'input[type="submit"]', () => {
                         if (this.#life.isFetching) {
                             console.log('API 调用进行中，点击事件已禁用。');
+                            this.hint('API 调用进行中，点击事件已禁用。');
                             return; // 如果 API 调用进行中，阻止事件触发
                         }
                         if ($('#option1').text() === '今年已结束' || $('#option2').text() === '今年已结束' || $('#option3').text() === '今年已结束') {
                             console.log('今年已结束，点击事件已禁用。');
+                            this.hint('今年已结束，点击事件已禁用。');
                             return; // 如果选项中有“今年已结束”，阻止事件触发
                         }
                         const inputText = trajectoryPage.find('#option4').val();
-                        this.#life.select(4,inputText);
-                        console.log('提交按钮点击',inputText);
+                        if (inputText.trim() === '') {
+                            console.log('文本框为空，提交事件已禁用。');
+                            this.hint('文本框为空，提交事件已禁用。');
+                            return; // 如果文本框为空，阻止事件触发
+                        }
+                        this.#life.select(4, inputText);
+                        console.log('提交按钮点击', inputText);
                     });
             } catch (error) {
                 console.error('An error occurred:', error);
@@ -680,7 +683,7 @@ class App{
                 page: trajectoryPage,
                 lifeTrajectory: trajectoryPage.find('#lifeTrajectory'),
                 pressEnter: ()=>{
-                    this.#pages.trajectory.lifeTrajectory.click();
+                    this.#pages.trajectory.page.find('input[type="submit"]').click();
                 },
                 clear: ()=>{
                     this.#currentPage = 'trajectory';

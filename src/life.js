@@ -30,6 +30,7 @@ class Life {
     #currentEvent;
     #process;
     apiCallTimeout;
+    #previousDescriptionsLength
 
     async initial() {
         const [age, talents, events, achievements] = await Promise.all([
@@ -126,11 +127,11 @@ class Life {
     async wenXinAPI(inputText) {
         this.isFetching = true; // 在 API 调用前设置标志为 true
         const age = this.getLastRecord().AGE;
-        console.log('发送文本',age + `岁的时候，` + inputText);
+        console.log('发送文本', age + `岁的时候，` + inputText);
         const appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
         const secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
         const openId = 'getanswer'; // Unique user ID
-        const token ="24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
+        const token = "24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
         const requestBody = {
             message: {
                 content: {
@@ -144,55 +145,133 @@ class Life {
                 openId: openId
             }
         };
-
-            try {
-                const response = await fetch('https://agentapi.baidu.com/assistant/getAnswer?appId=' + appId + '&secretKey='+ secretKey, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestBody)
-                });
     
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-
-                const parsedData = await response.json();
-
-                console.log('接收到数据转换为json',parsedData);
-                
-                const nestedJsonString = parsedData.data.content[0].data;
-                
-                // 移除 Markdown 标记并提取 JSON 字符串
-                let cleanedJsonString = nestedJsonString.replace(/^\`\`\`json([\s\S]*?)\`\`\`$/, '$1');
-                // 移除数据中的+
-                cleanedJsonString = cleanedJsonString.replace(/\+(\d+)/g, '$1'); // 将 +10 替换为 10
-                // // 解析嵌套的JSON字符串
-                const nestedJsonObject = JSON.parse(cleanedJsonString);
-
-                console.log('解析嵌套json',nestedJsonObject);
-                // 上传选项
-                this.tokens++;   
-                
-                // 获取到的api数据添加到事件与添加到proper
-                this.#property.upDataSelection(nestedJsonObject);
-                this.#property.upDataAI(nestedJsonObject.normal);
-
-
-                console.log("AI发送数据",nestedJsonObject)
-                this.select(0);
-                return nestedJsonObject
-                
-
-
-            } catch (error) {
-                console.error(error)
-                console.log('智障文心又乱给出错误格式的数据了');
-            } finally {
-                this.isFetching = false; // 在 API 调用后重置标志
+        try {
+            const response = await fetch('https://agentapi.baidu.com/assistant/conversation?appId=' + appId + '&secretKey=' + secretKey, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            });
+    
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
             }
+    
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let jsonBuffer = '';
+            let collectingJson = false;//目前api传输过来没有了```json所以暂时改成true
+    
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    console.log("Stream complete");
+                    break;
+                }
+    
+                buffer += decoder.decode(value, { stream: true });
+    
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // 保存最后一个不完整的行
+    
+                for (let line of lines) {
+                    if (line.startsWith('data:')) {
+                        const jsonString = line.replace('data:', '').trim();
+                        if (jsonString) {
+                            const parsedData = JSON.parse(jsonString);
+                            if (parsedData.data && parsedData.data.message && parsedData.data.message.content) {
+                                const contentArray = parsedData.data.message.content;
+                                for (let content of contentArray) {
+                                    if (content.data && content.data.text) {
+                                            // console.log('接收到text数据:', content.data.text);
+                                            jsonBuffer += content.data.text;
+                                            // console.log("整合",jsonBuffer)
+                                            this.extractAndShowDescription(jsonBuffer);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // console.log('更新添加前:', jsonBuffer);
+            jsonBuffer = jsonBuffer.replace(/\+(\d+)/g, '$1');
+            jsonBuffer = jsonBuffer.replace(/^\`\`\`json|```$/g, '');
+            // console.log('转换json前:', jsonBuffer);
+            const nestedJsonObject = JSON.parse(jsonBuffer);
+            // console.log('解析嵌套json', nestedJsonObject);
+            this.tokens++;
+            this.#property.upDataSelection(nestedJsonObject);
+            this.#property.upDataAI(nestedJsonObject.normal);
+            console.log("AI发送数据", nestedJsonObject);
+            this.freshProperty(); // 实时更新页面内容
+
+            return nestedJsonObject;
+    
+        } catch (error) {
+            console.error(error);
+            console.log('智障文心又乱给出错误格式的数据了');
+        } finally {
+            this.isFetching = false; // 在 API 调用后重置标志
+        }
     }
+
+    extractAndShowDescription(jsonBuffer) {
+        this.isFetching = true;
+        const descriptions = [];
+        const regex = /"description"\s*:\s*"([^"]*)"/g;
+        let match;
+        
+        
+        while ((match = regex.exec(jsonBuffer)) !== null) {
+            descriptions.push(match[1]); 
+        }
+        if (descriptions.length !== this.#previousDescriptionsLength) {
+            // console.log(descriptions,descriptions.length, this.#previousDescriptionsLength);
+            this.#previousDescriptionsLength = descriptions.length;
+            if (descriptions.length === 1) {
+                this.updateText("#option1", descriptions[0]);
+            } else if (descriptions.length === 2) {
+                this.updateText("#option2", descriptions[1]);
+            } else if (descriptions.length === 3) {
+                this.updateText("#option3", descriptions[2]);
+            } 
+        }
+        this.isFetching = false;
+    }
+
+    updateText(id, txt) {
+
+        const piece = txt.split("");
+        let i = 0;
+        const originalText = $(id).text().split("");
+        const maxLength = Math.max(originalText.length, piece.length);
+        const interval = setInterval(() => {
+            if (i < maxLength) {
+                if (i < piece.length) {
+                    if (i < originalText.length) {
+                        originalText[i] = piece[i];
+                    } else {
+                        originalText.push(piece[i]);
+                    }
+                } else {
+                    originalText[i] = "";
+                }
+                $(id).text(originalText.join(""));
+                i++;
+                // console.log(i, originalText.join(""));
+            } else {
+                clearInterval(interval);
+                // console.log(txt)
+            }
+            $("#lifeTrajectory").scrollTop($("#lifeTrajectory")[0].scrollHeight);
+        }, 150); // Adjust the interval time as needed
+    }
+    
+    
 
     select(option,inputText){
         const selections = this.getLastRecord().SEL;
@@ -313,6 +392,7 @@ class Life {
 
     selectionBack(id) {
         if (this.#process.length < 3) {
+            console.log('添加流程前', this.#process);
             this.#process.push(id);
             console.log('添加流程', this.#process);
             let path = 'selections';
@@ -343,7 +423,6 @@ class Life {
         const tokens = this.getStoredTokens();
         $("#lifeProperty").html(`
             <li ><span>调用</span><span>${tokens}</span></li>
-            <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
             <li><span>颜值</span><span>${property.LSCHR}${property.CHCHR >= 0 ? '+' : ''} ${property.CHCHR}</span></li>
             <li><span>智力</span><span>${property.LSINT}${property.CHINT >= 0 ? '+' : ''} ${property.CHINT}</span></li>
             <li><span>体质</span><span>${property.LSSTR}${property.CHSTR >= 0 ? '+' : ''} ${property.CHSTR}</span></li>
@@ -356,35 +435,40 @@ class Life {
     freshTotal() {
         setTimeout(() => {
             const property = this.getLastRecord();
-            console.log('更新页面输入',property)
+            console.log('更新页面输入', property)
             const tokens = this.getStoredTokens();
             $("#lifeProperty").html(`
-                <li ><span>调用</span><span>${tokens}</span></li>
-                <li style="width:10%;flex:auto;"><span>数据来源</span><span>文心一言</span></li>
+                <li><span>调用</span><span>${tokens}</span></li>
                 <li><span>颜值</span><span>${property.LSCHR}${property.CHCHR >= 0 ? '+' : ''} ${property.CHCHR}</span></li>
                 <li><span>智力</span><span>${property.LSINT}${property.CHINT >= 0 ? '+' : ''} ${property.CHINT}</span></li>
                 <li><span>体质</span><span>${property.LSSTR}${property.CHSTR >= 0 ? '+' : ''} ${property.CHSTR}</span></li>
                 <li><span>家境</span><span>${property.LSMNY}${property.CHMNY >= 0 ? '+' : ''} ${property.CHMNY}</span></li>
                 <li><span>快乐</span><span>${property.LSSPR}${property.CHSPR >= 0 ? '+' : ''} ${property.CHSPR}</span></li>
             `);
+
+            //更新选项
+            this.updateText("#option1", property.SEL.selection1.description);
+            this.updateText("#option2", property.SEL.selection2.description);
+            this.updateText("#option3", property.SEL.selection3.description);
+
             $("#selection").html(`
-                    <li id="option1" style="user-select:auto;">${property.SEL.selection1.description}</li>
-                    <li id="option2" style="user-select:auto;">${property.SEL.selection2.description}</li>
-                    <li id="option3" style="user-select:auto;">${property.SEL.selection3.description}</li>
-                    <li>
-                    <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem;text-align: center;margin:3px;">
-                    <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem;  text-align: center;margin:3px;">
-                    </li>
+                <li id="option1" style="user-select:auto;">${property.SEL.selection1.description}</li>
+                <li id="option2" style="user-select:auto;">${property.SEL.selection2.description}</li>
+                <li id="option3" style="user-select:auto;">${property.SEL.selection3.description}</li>
+                <li>
+                <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem;text-align: center;margin:3px;">
+                <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem;  text-align: center;margin:3px;">
+                </li>
             `);
+
             console.log('AI更新页面点数变化',
                 property.CHCHR,
                 property.CHINT,
                 property.CHSTR,
                 property.CHMNY,
                 property.CHSPR)
-        }, 200);}
-
-
+        }, 200);
+    }
 
     freshText(property, option) {
         let selection;
@@ -465,7 +549,9 @@ class Life {
         this.#property.change(this.#property.TYPES.EVT, eventId);
 
         // AI获取数据
+        this.#process = [];
         this.#currentEvent = this.#event.get(eventId);
+        
         console.log('当前事件',this.#currentEvent)
         this.checkSelections(description);
 
