@@ -130,7 +130,7 @@ class Life {
         console.log('发送文本', age + `岁的时候，` + inputText);
         const appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
         const secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
-        const openId = 'getanswer'; // Unique user ID
+        const openId = 'getanswer1'; // Unique user ID
         const token = "24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
         const requestBody = {
             message: {
@@ -186,9 +186,9 @@ class Life {
                                 const contentArray = parsedData.data.message.content;
                                 for (let content of contentArray) {
                                     if (content.data && content.data.text) {
-                                            // console.log('接收到text数据:', content.data.text);
+                                            console.log('接收到text数据:', content.data.text);
                                             jsonBuffer += content.data.text;
-                                            // console.log("整合",jsonBuffer)
+                                            console.log("整合",jsonBuffer)
                                             this.extractAndShowDescription(jsonBuffer);
                                     }
                                 }
@@ -197,7 +197,7 @@ class Life {
                     }
                 }
             }
-            // console.log('更新添加前:', jsonBuffer);
+            console.log('更新添加前:', jsonBuffer);
             jsonBuffer = jsonBuffer.replace(/\+(\d+)/g, '$1');
             jsonBuffer = jsonBuffer.replace(/^\`\`\`json|```$/g, '');
             // console.log('转换json前:', jsonBuffer);
@@ -214,7 +214,14 @@ class Life {
     
         } catch (error) {
             console.error(error);
-            console.log('智障文心又乱给出错误格式的数据了');
+            const response = await fetch('https://agentapi.baidu.com/assistant/getAnswer?appId=' + appId + '&secretKey=' + secretKey);
+            const responseData = await response.json();
+            if (responseData.status ==1115){
+                window.alert("文心一言今日api调用额度已用完(500次),调用ai功能无效，已经存储的数据可用,所以当原版玩吧")
+            }else{
+                console.log('智障文心又乱给出错误格式的数据了');
+                window.alert('智障文心又乱给出错误格式的数据了,下一年吧');
+            }
         } finally {
             this.isFetching = false; // 在 API 调用后重置标志
         }
