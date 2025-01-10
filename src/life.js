@@ -208,6 +208,7 @@ class Life {
             this.#property.upDataAI(nestedJsonObject.normal);
             console.log("AI发送数据", nestedJsonObject);
             this.freshProperty(); // 实时更新页面内容
+            this.freshOption(); // 实时更新页面内容
 
             return nestedJsonObject;
     
@@ -220,7 +221,6 @@ class Life {
     }
 
     extractAndShowDescription(jsonBuffer) {
-        this.isFetching = true;
         const descriptions = [];
         const regex = /"description"\s*:\s*"([^"]*)"/g;
         let match;
@@ -240,7 +240,6 @@ class Life {
                 this.updateText("#option3", descriptions[2]);
             } 
         }
-        this.isFetching = false;
     }
 
     updateText(id, txt) {
@@ -429,6 +428,19 @@ class Life {
             <li><span>家境</span><span>${property.LSMNY}${property.CHMNY >= 0 ? '+' : ''} ${property.CHMNY}</span></li>
             <li><span>快乐</span><span>${property.LSSPR}${property.CHSPR >= 0 ? '+' : ''} ${property.CHSPR}</span></li>
         `)
+    }
+
+    freshOption(){
+        const property = this.getLastRecord();
+        $("#selection").html(`
+            <li id="option1" style="user-select:auto;">${property.SEL.selection1.description}</li>
+            <li id="option2" style="user-select:auto;">${property.SEL.selection2.description}</li>
+            <li id="option3" style="user-select:auto;">${property.SEL.selection3.description}</li>
+            <li>
+            <input type="text" id="option4" aria-label="Input Text" style="width:100%;padding: 0; font-size: 1rem;text-align: center;margin:3px;">
+            <input type="submit" aria-label="Submit" class="mainbtn" style=" padding: 5px; font-size: 1rem;  text-align: center;margin:3px;">
+            </li>
+        `);
     }
     
     // 更新页面
