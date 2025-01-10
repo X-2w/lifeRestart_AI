@@ -12,6 +12,7 @@ class Life {
         this.#isFetching = false; // 添加此行
         this.#currentEvent = {};
         this.#process = [];
+        this.#API = 1;
     }
 
     get isFetching() {
@@ -31,6 +32,7 @@ class Life {
     #process;
     apiCallTimeout;
     #previousDescriptionsLength
+    #API;
 
     async initial() {
         const [age, talents, events, achievements] = await Promise.all([
@@ -128,9 +130,13 @@ class Life {
         this.isFetching = true; // 在 API 调用前设置标志为 true
         const age = this.getLastRecord().AGE;
         console.log('发送文本', age + `岁的时候，` + inputText);
-        const appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
-        const secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
-        const openId = 'getanswer1'; // Unique user ID
+        let appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
+        let secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
+        if (this.#API === 2){
+            appId = 'HNKx1HzUJ2pBXOwxcXd4sdHApY7NozO0'
+            secretKey = '6QDRP3CUbLRjdPRJEwCgWIAz1aAUwGiV'
+        }
+        const openId = 'conversation'; // Unique user ID
         const token = "24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
         const requestBody = {
             message: {
@@ -186,9 +192,9 @@ class Life {
                                 const contentArray = parsedData.data.message.content;
                                 for (let content of contentArray) {
                                     if (content.data && content.data.text) {
-                                            console.log('接收到text数据:', content.data.text);
+                                            // console.log('接收到text数据:', content.data.text);
                                             jsonBuffer += content.data.text;
-                                            console.log("整合",jsonBuffer)
+                                            // console.log("整合",jsonBuffer)
                                             this.extractAndShowDescription(jsonBuffer);
                                     }
                                 }
@@ -197,7 +203,7 @@ class Life {
                     }
                 }
             }
-            console.log('更新添加前:', jsonBuffer);
+            // console.log('更新添加前:', jsonBuffer);
             jsonBuffer = jsonBuffer.replace(/\+(\d+)/g, '$1');
             jsonBuffer = jsonBuffer.replace(/^\`\`\`json|```$/g, '');
             // console.log('转换json前:', jsonBuffer);
@@ -216,8 +222,12 @@ class Life {
             console.error(error);
             const response = await fetch('https://agentapi.baidu.com/assistant/getAnswer?appId=' + appId + '&secretKey=' + secretKey);
             const responseData = await response.json();
-            if (responseData.status ==1115){
-                window.alert("文心一言今日api调用额度已用完(500次),调用ai功能无效，已经存储的数据可用,所以当原版玩吧")
+            if (responseData.status === 1115 && this.#API === 1){
+                window.alert("文心一言今日api调用额度已用完(500次),调用ai功能无效,启用2号")
+                this.#API = 2
+                this.wenXinAPI(inputText);
+            }else if (responseData.status === 1115 && this.#API === 2){
+                window.alert("文心一言2今日api调用额度已用完(500次),调用ai功能无效,只能当作原版了")
             }else{
                 console.log('智障文心又乱给出错误格式的数据了');
                 window.alert('智障文心又乱给出错误格式的数据了,下一年吧');
