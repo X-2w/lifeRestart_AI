@@ -4,6 +4,9 @@ import Talent from './talent.js';
 import Achievement from './achievement.js';
 
 class Life {
+
+    static fullAI = false;
+
     constructor() {
         this.#property = new Property();
         this.#event = new Event();
@@ -13,6 +16,7 @@ class Life {
         this.#currentEvent = {};
         this.#process = [];
         this.#API = 1;
+        this.#openId = Math.floor(Math.random() * 100000);
     }
 
     get isFetching() {
@@ -33,6 +37,7 @@ class Life {
     apiCallTimeout;
     #previousDescriptionsLength
     #API;
+    #openId;
 
     async initial() {
         const [age, talents, events, achievements] = await Promise.all([
@@ -49,14 +54,16 @@ class Life {
 
     checkSelections(description) {
         console.log('获取到事件id,检查是否存在描述');
-        if (!this.#currentEvent.selections) {
+        console.log('全ai',Life.fullAI)
+        if (!this.#currentEvent.selections || Life.fullAI) {
             console.log('不存在选项，调用API');
             clearTimeout(this.apiCallTimeout);
             this.apiCallTimeout = setTimeout(async () => {
                 this.#currentEvent.selections = await this.wenXinAPI(description);
                 console.log('更新当前事件为',this.#currentEvent);
+                this.#event.addSelections(this.#currentEvent);
             }, 2000); 
-        }else if (this.#currentEvent.selections) {
+        }else if (this.#currentEvent.selections && !Life.fullAI) {
             console.log("存在选项，调用本地数据")
             this.#property.upDataSelection(this.#currentEvent.selections);
             this.#property.upDataAI(this.#currentEvent.selections.normal);
@@ -78,7 +85,7 @@ class Life {
             }
             currentObject = currentObject[propertyAccessArray[i]];
         }
-        if (!currentObject) {
+        if (!currentObject || Life.fullAI) {
             console.log('不存在选项，调用API', path);
             clearTimeout(this.apiCallTimeout);
             this.apiCallTimeout = setTimeout(async () => {
@@ -136,7 +143,7 @@ class Life {
             appId = 'HNKx1HzUJ2pBXOwxcXd4sdHApY7NozO0'
             secretKey = '6QDRP3CUbLRjdPRJEwCgWIAz1aAUwGiV'
         }
-        const openId = 'conversation'; // Unique user ID
+        const openId = 'conversation'+this.#openId; // Unique user ID
         const token = "24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
         const requestBody = {
             message: {
@@ -225,13 +232,13 @@ class Life {
             if (responseData.status === 1115 && this.#API === 1){
                 window.alert("文心一言今日api调用额度已用完(500次),调用ai功能无效,启用2号")
                 this.#API = 2
-                this.wenXinAPI(inputText);
             }else if (responseData.status === 1115 && this.#API === 2){
                 window.alert("文心一言2今日api调用额度已用完(500次),调用ai功能无效,只能当作原版了")
             }else{
-                console.log('智障文心又乱给出错误格式的数据了');
+                console.log('智障文心又乱给出错误格式的数据了',jsonBuffer);
                 window.alert('智障文心又乱给出错误格式的数据了,下一年吧');
             }
+            return;
         } finally {
             this.isFetching = false; // 在 API 调用后重置标志
         }
@@ -283,7 +290,10 @@ class Life {
                 clearInterval(interval);
                 // console.log(txt)
             }
-            $("#lifeTrajectory").scrollTop($("#lifeTrajectory")[0].scrollHeight);
+            const lifeTrajectoryElement = $("#lifeTrajectory")[0];
+            if (lifeTrajectoryElement) {
+                $("#lifeTrajectory").scrollTop(lifeTrajectoryElement.scrollHeight);
+            }
         }, 150); // Adjust the interval time as needed
     }
     
@@ -400,7 +410,6 @@ class Life {
                 }, 200);
             }
         }else{
-            this.#event.addSelections(this.#currentEvent);
             this.freshTotal();
         }
 

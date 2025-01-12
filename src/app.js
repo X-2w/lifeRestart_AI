@@ -514,7 +514,7 @@ class App{
             <ul id="talents" class="selectlist" style="flex: 0 1 auto;">
                 <li class="grade2b">黑幕（面试一定成功）</li>
             </ul>
-            <button id="again" class="mainbtn"><span class="iconfont">&#xe6a7;</span>再次重开</button>
+            <button id="again" class="mainbtn"><span class="iconfont">&#xe6a7;</span>再次重开-开启全AI模式</button>
         </div>
         `);
 
@@ -527,6 +527,8 @@ class App{
                 this.#talentSelected.clear();
                 this.#totalMax = 20;
                 this.#isEnd = false;
+                Life.fullAI = true
+                console.log('全ai',Life.fullAI)
                 this.switch('index');
             });
 

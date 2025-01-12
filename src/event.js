@@ -60,19 +60,8 @@ class Event {
     addSelections(currentEvent) {
         this.#events[currentEvent.id] = currentEvent;
         console.log("已添加到events", this.#events[currentEvent.id]);
-        // if (downloadButton) {
-        //     downloadButton.addEventListener('click', () => {
-        //         this.writeEvents(this.#events);
-        //         console.log("已下载events.json");
-        //     });
-        // } else {
-        //     console.error("Element with ID 'downloaddata' not found.");
-        // }
     }
 
-
-
-    // 写入事件
     // 写入事件
         writeEvents() {
             const jsonString = JSON.stringify(this.#events, null, 2);
