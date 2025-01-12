@@ -235,7 +235,6 @@ class Life {
             }else if (responseData.status === 1115 && this.#API === 2){
                 window.alert("文心一言2今日api调用额度已用完(500次),调用ai功能无效,只能当作原版了")
             }else{
-                console.log('智障文心又乱给出错误格式的数据了',jsonBuffer);
                 window.alert('智障文心又乱给出错误格式的数据了,下一年吧');
             }
             return;
