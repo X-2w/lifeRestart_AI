@@ -137,11 +137,11 @@ class Life {
         this.isFetching = true; // 在 API 调用前设置标志为 true
         const age = this.getLastRecord().AGE;
         console.log('发送文本', age + `岁的时候，` + inputText);
-        let appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
-        let secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
+        let appId = 'HNKx1HzUJ2pBXOwxcXd4sdHApY7NozO0'
+        let secretKey = '6QDRP3CUbLRjdPRJEwCgWIAz1aAUwGiV'
         if (this.#API === 2){
-            appId = 'HNKx1HzUJ2pBXOwxcXd4sdHApY7NozO0'
-            secretKey = '6QDRP3CUbLRjdPRJEwCgWIAz1aAUwGiV'
+            appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
+            secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
         }
         const openId = 'conversation'+this.#openId; // Unique user ID
         const token = "24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
@@ -210,10 +210,10 @@ class Life {
                     }
                 }
             }
-            // console.log('更新添加前:', jsonBuffer);
+            console.log('更新添加前:', jsonBuffer);
             jsonBuffer = jsonBuffer.replace(/\+(\d+)/g, '$1');
             jsonBuffer = jsonBuffer.replace(/^\`\`\`json|```$/g, '');
-            // console.log('转换json前:', jsonBuffer);
+            console.log('转换json前:', jsonBuffer);
             const nestedJsonObject = JSON.parse(jsonBuffer);
             // console.log('解析嵌套json', nestedJsonObject);
             this.tokens++;
@@ -235,13 +235,90 @@ class Life {
             }else if (responseData.status === 1115 && this.#API === 2){
                 window.alert("文心一言2今日api调用额度已用完(500次),调用ai功能无效,只能当作原版了")
             }else{
-                window.alert('智障文心又乱给出错误格式的数据了,下一年吧');
+                window.alert('文心一言模型又出问题了,等十秒左右直接闪现出来');
+                this.wenXinAPIGetAnswer(inputText);
             }
             return;
         } finally {
             this.isFetching = false; // 在 API 调用后重置标志
         }
     }
+
+    async wenXinAPIGetAnswer(inputText) {
+        this.isFetching = true; // 在 API 调用前设置标志为 true
+        const age = this.getLastRecord().AGE;
+        console.log('发送文本',age + `岁的时候，` + inputText);
+        let appId = 'HNKx1HzUJ2pBXOwxcXd4sdHApY7NozO0'
+        let secretKey = '6QDRP3CUbLRjdPRJEwCgWIAz1aAUwGiV'
+        if (this.#API === 2){
+            appId = '9d8aLRdnMwaUBSYmHoUtvj9ScT0fXpbI';
+            secretKey = 'fMAO8u9Z8eBZ2jozMchN0gslVWcLAr7s';
+        }
+        const openId = 'getanswer'; // Unique user ID
+        const token ="24.01a37e70a772b7a0635313419ed5d429.2592000.1737377110.282335-116602943";
+        const requestBody = {
+            message: {
+                content: {
+                    type: "text",
+                    value: {
+                        showText: age + `岁的时候，` + inputText
+                    }
+                },
+                source: appId,
+                from: "openapi",
+                openId: openId
+            }
+        };
+
+            try {
+                const response = await fetch('https://agentapi.baidu.com/assistant/getAnswer?appId=' + appId + '&secretKey='+ secretKey, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+    
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+
+                const parsedData = await response.json();
+
+                console.log('接收到数据转换为json',parsedData);
+                
+                const nestedJsonString = parsedData.data.content[0].data;
+                
+                // 移除 Markdown 标记并提取 JSON 字符串
+                let cleanedJsonString = nestedJsonString.replace(/^\`\`\`json([\s\S]*?)\`\`\`$/, '$1');
+                // 移除数据中的+
+                cleanedJsonString = cleanedJsonString.replace(/\+(\d+)/g, '$1'); // 将 +10 替换为 10
+                // // 解析嵌套的JSON字符串
+                const nestedJsonObject = JSON.parse(cleanedJsonString);
+
+                console.log('解析嵌套json',nestedJsonObject);
+                // 上传选项
+                this.tokens++;   
+                
+                // 获取到的api数据添加到事件与添加到proper
+                this.#property.upDataSelection(nestedJsonObject);
+                this.#property.upDataAI(nestedJsonObject.normal);
+
+                console.log("AI发送数据",nestedJsonObject)
+                this.select(0);
+                this.freshTotal();
+                return nestedJsonObject
+                
+
+
+            } catch (error) {
+                console.error(error)
+                console.log('智障文心又乱给出错误格式的数据了');
+            } finally {
+                this.isFetching = false; // 在 API 调用后重置标志
+            }
+    }
+
 
     extractAndShowDescription(jsonBuffer) {
         const descriptions = [];
